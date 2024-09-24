@@ -15,7 +15,6 @@ The repository is structured as follows:
   - **Assignment_Solution.pdf**: The final PDF that contains the code output and results.
 - **Assignment.pdf**: The marketing assignment prompt outlining the tasks.
 - **Case_Assessing_RFM_at_Tuscan_Lifestyles.pdf**: The case study providing background information for the analysis.
-- **Marketing_Assignment_1.pdf**: Another version of the marketing assignment details.
 
 ## Analysis Breakdown
 ### Key Tasks:
