@@ -1,0 +1,226 @@
+---
+title: "Marketing Assignment 1"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-02-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#Loading the dataframe
+library(readr)
+Data<-read_csv('TuscanDataForRFMAnalysis.csv')
+df<-Data
+head(df)
+```
+$$Q1.$$
+```{r}
+library(tidyverse)
+library(dplyr)
+#Filtering the dataframe for customers buying from test catalog
+test_cat<-filter(df, buyerdummy==1)
+non_test_cat<-filter(df,buyerdummy==0)
+#Percent of total customers who bought from test catalog
+percentage_buyers_catalog<-(dim(test_cat)[1]/dim(df)[1])*100
+percentage_buyers_catalog
+```
+
+```{r}
+#Summary Statistics of total dollar value of past purchases for customers buying in test catalog
+summary_tot_spent<-summary(test_cat$totdol)
+summary_tot_spent
+sd_tot_spent<-sd(test_cat$totdol)
+sd_tot_spent
+mean_tot_spent<-mean(test_cat$totdol)
+mean_tot_spent
+#Summary statistics of spending by customers buying from test catalog using the test catalog
+summary_spent_test_cat<-summary(test_cat$dollars)
+summary_spent_test_cat
+sd_spent_test_cat<-sd(test_cat$dollars)
+sd_spent_test_cat
+mean_spent_test_cat<-mean(test_cat$dollars)
+mean_spent_test_cat
+```
+
+```{r}
+#Summary Statistics of total dollar value of past purchases for customers not buying in test catalog
+summary_tot_spent_non<-summary(non_test_cat$totdol)
+summary_tot_spent_non
+sd_tot_spent_non<-sd(non_test_cat$totdol)
+sd_tot_spent_non
+mean_tot_spent_non<-mean(non_test_cat$totdol)
+mean_tot_spent_non
+#Summary statistics of spending by customers not buying from test catalog using the test catalog
+summary_spent_test_cat_non<-summary(non_test_cat$dollars)
+summary_spent_test_cat_non
+sd_spent_test_cat_non<-sd(non_test_cat$dollars)
+sd_spent_test_cat_non
+mean_spent_test_cat_non<-mean(non_test_cat$dollars)
+mean_spent_test_cat_non
+```
+
+```{r}
+#Summary Statistics of total dollar value of past purchases for customers 
+summary_tot_spent_all<-summary(df$totdol)
+summary_tot_spent_all
+sd_tot_spent_all<-sd(df$totdol)
+sd_tot_spent_all
+mean_tot_spent_all<-mean(df$totdol)
+mean_tot_spent_all
+#Summary statistics of spending by customers 
+summary_spent_test_cat_all<-summary(df$dollars)
+summary_spent_test_cat_all
+sd_spent_test_cat_all<-sd(df$dollars)
+sd_spent_test_cat_all
+mean_spent_test_cat_all<-mean(df$dollars)
+mean_spent_test_cat_all
+```
+$$Q2.$$
+```{r}
+#Creating R, F, and M quintiles
+df$r_quin <-.bincode(df$last, quantile(df$last, probs = seq(0, 1, 0.2)), right = TRUE,include.lowest = TRUE)
+df$f_quin<-.bincode(df$numords, quantile(df$numords, probs = seq(0, 1, 0.2)), right = TRUE,include.lowest = TRUE)
+df$m_quin<-.bincode(df$totdol, quantile(df$totdol, probs = seq(0, 1, 0.2)), right = TRUE,include.lowest = TRUE)
+#Selecting the necessary columns
+df_selected<-select(df,last,r_quin,numords,f_quin,totdol,m_quin)
+#Showing the 5 selected observations information about R, F, M
+head(df_selected,5)
+```
+$$Q3.$$
+```{r, warning=FALSE}
+library(ggplot2)
+#Average of R by Quintile
+ggplot(data=df,aes(x=r_quin,y=last)) + 
+  geom_bar(stat = "summary", fun.y = "mean")
+#Average of F by Quintile
+ggplot(data=df,aes(x=f_quin,y=numords)) +
+  geom_bar(stat="summary",fun.y="mean")
+#Average of M by Quintile
+ggplot(data=df,aes(x=m_quin,y=totdol)) +
+  geom_bar(stat="summary",fun.y="mean")
+```
+$$Q4.$$
+```{r,warning=FALSE}
+#Predictive Nature of Recency for buying probability
+ggplot(data=df,aes(x=r_quin,y=buyerdummy)) + 
+  geom_bar(stat = "summary", fun.y = "mean")
+#From this graph it is observed that the most recent purchasers are the most likely to buy
+#Predictive Nature of Frequency for buying probability
+ggplot(data=df,aes(x=f_quin,y=buyerdummy)) +
+  geom_bar(stat="summary",fun.y="mean")
+#From this graph it is observed that the first quintile isn't occupied by people with highest probability of purchase
+#Predictive Nature of Monetary for buying probability
+ggplot(data=df,aes(x=m_quin,y=buyerdummy)) +
+  geom_bar(stat="summary",fun.y="mean")
+#From this graph it is observed that the first quintile isn't occupied by people with the highest spending
+```
+```{r}
+#Reordering f_quin so group 1 is most likely to buy
+df$f_quin<-6-df$f_quin
+ggplot(data=df,aes(x=f_quin,y=buyerdummy)) +
+  geom_bar(stat="summary",fun.y="mean")
+```
+```{r}
+#Reordering m_quin so group 1 is most likely to buy
+df$m_quin<-6-df$m_quin
+ggplot(data=df,aes(x=m_quin,y=buyerdummy)) +
+  geom_bar(stat="summary",fun.y="mean")
+```
+```{r,warning=FALSE}
+#Creating RFM Composite Index
+df$rfm_ind<-(100*df$r_quin)+(10*df$f_quin)+(df$m_quin)
+#Average response rate for each composite segment
+df$rfm_response<-ave(df$buyerdummy,df$rfm_ind)
+head(df)
+ggplot(data = df, aes(x = as.factor(rfm_ind), y = buyerdummy)) +
+  geom_bar(stat = "summary", fun.y = "mean")+ labs(title="% Buyers by RFM Index", x="RFM Index", y="% Buyer") 
+```
+$$Q5a.$$
+```{r}
+#It was observed that there are about 2.456% of customers who purchase from the test catalog implying that 2.456% of customers from all the customers mailed to will purchase from the test catalog
+rem_cust<-1834469
+cost_mailing<-1
+rev_cust<-mean_spent_test_cat
+buyer_expect<-round((percentage_buyers_catalog*rem_cust)/100,0)
+buyer_expect
+```
+$$Q5b.$$
+```{r}
+#Net Profit from revenue and cost of the marketing technique adopted
+tot_rev<-rev_cust*buyer_expect
+cost_gs<-0.5*tot_rev
+tot_mail_cost<-cost_mailing*rem_cust
+tot_cost<-cost_gs+tot_mail_cost
+net_profit<-tot_rev-tot_cost
+net_profit
+```
+$$Q5c.$$
+```{r}
+#The return on marketing expenditure as a percent
+return_market_exp<-(net_profit/tot_mail_cost)*100
+return_market_exp
+```
+$$Q6.$$
+```{r}
+#In order to calculate the break-even response rate there is a need to use average revenue per customer, cost of mailing an offer, and cost of goods and services
+c_gs_one<-0.5*rev_cust
+break_even_rate<-(cost_mailing/(rev_cust-(c_gs_one)))*100
+break_even_rate
+```
+$$Q7a.$$
+```{r}
+break_even_rate1<-break_even_rate/100
+df$targeted[df$rfm_response>break_even_rate1]<-1
+df$targeted[df$rfm_response<=break_even_rate1]<-0
+head(df)
+```
+```{r}
+tabled<-table(as.integer(df$targeted))/nrow(df)
+optimum_market_fraction<-tabled[2]
+optimum_market_fraction
+```
+$$Q7b.$$
+```{r,warning=FALSE}
+library(psych)
+summed_stats_by_test_cat<-describeBy(df$buyerdummy,df$targeted)
+summed_stats_by_test_cat
+avg_response_rate<-0.03
+avg_response_rate
+```
+$$Q7c.$$
+```{r}
+#Number of mails sent under the targeted policy
+sent_mail_num<-rem_cust*mean(df$targeted)
+sent_mail_num
+#Expected number of responses under the targeted policy
+exp_responses_num<-sent_mail_num*mean(df[df$targeted==1,]$buyerdummy)
+exp_responses_num
+```
+```{r}
+#Net Profit achieved from targeted policy
+mail_cost_targeted<-cost_mailing*sent_mail_num
+net_profit_targeted<-((rev_cust-c_gs_one)*exp_responses_num)-(mail_cost_targeted)
+net_profit_targeted
+```
+$$Q7d.$$
+```{r}
+roi_targeted<-(net_profit_targeted/mail_cost_targeted)*100
+roi_targeted
+```
+$$Q7e.$$
+The RFM approach targets customers based on recency, frequency, and monetary value of past purchases which are strong predictors of future purchasing behaviour of the customers. By focusing on the recent, frequent, high-value buyers the RFM approach manages to allocate marketing resources more appropriately as compared to a mass marketing strategy as observed above. The RFM approach yields higher response rates, better conversion, and higher net profit and ROI as it manages to-
+1. Reduce Waste by not targeting those customers who are unlikely to respond
+2. Increase efficiency by focusing on those with higher propensity to buy
+3. Enhances customer experience by tailoring offers to those interested in them resulting in higher customer loyalty and lifetime value
+
+
